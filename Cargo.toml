@@ -1,0 +1,17 @@
+[package]
+name = "monitrust"
+version = "0.1.0"
+authors = ["Paul Lesur <gitconfig@lesurpaul.fr>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+nix = "0.14.1"
+rocket = "0.4.2"
+
+[profile.release]
+opt-level = 'z'  # Optimize for size.
+lto = true
+panic = 'abort'
+codegen-units = 1
