@@ -1,2 +1,6 @@
 /target
 **/*.rs.bk
+.idea
+
+watchers.json
+targets.json
