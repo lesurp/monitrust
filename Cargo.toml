@@ -3,20 +3,21 @@ name = "monitrust"
 version = "0.1.0"
 authors = ["Paul Lesur <gitconfig@lesurpaul.fr>"]
 edition = "2021"
+description = "A dumb watchdog + alert manager for self-hosted systems."
+license-file = "LICENSE"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 anyhow = "1.0.79"
 nix = { version = "0.27.1", default_features = false, features = ["fs"] }
-tokio = { version = "1.35.1", features = ["full"] }
-teloxide = "0.12.2"
 serde = { version = "1.0.195", features = ["derive"] }
 serde_json = "1.0.111"
 serde_with = "3.6.1"
-tracing = "0.1.40"
-futures = "0.3.30"
+teloxide = "0.12.2"
 thiserror = "1.0.57"
+tokio = { version = "1.35.1", features = ["full"] }
+tracing = "0.1.40"
 tracing-subscriber = "0.3.18"
 
 [profile.release]
@@ -24,3 +25,19 @@ opt-level = 'z'  # Optimize for size.
 lto = true
 panic = 'abort'
 codegen-units = 1
+
+[package.metadata.deb]
+maintainer = "Paul Lesur <me@lesurpaul.fr>"
+license-file = "LICENSE"
+extended-description = """\
+A dumb watchdog + alert manager for self-hosted systems."""
+depends = "systemd"
+section = "utility"
+priority = "optional"
+assets = [
+    ["target/release/monitrust", "usr/bin/", "755"],
+    ["reporters.json", "etc/monitrust/", "644"],
+    ["watchers.json", "etc/monitrust/", "644"],
+]
+maintainer-scripts = "debian/"
+systemd-units = { enable = true }
