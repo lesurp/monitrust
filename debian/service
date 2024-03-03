@@ -1,0 +1,9 @@
+[Unit]
+Description=Monitrust
+
+[Service]
+WorkingDirectory=/etc/monitrust
+ExecStart=/usr/bin/monitrust
+
+[Install]
+WantedBy=multi-user.target
