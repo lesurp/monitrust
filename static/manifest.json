@@ -1,8 +1,0 @@
-{
-  "name": "MoniTRust",
-  "short_name": "MoniTRust",
-  "start_url": ".",
-  "display": "standalone",
-  "description": "Monitoring for your server"
-}
-
