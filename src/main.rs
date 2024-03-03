@@ -9,7 +9,7 @@ use std::time::Instant;
 use anyhow::Context;
 use serde::Deserialize;
 use serde::Serialize;
-use tracing::{error, info};
+use tracing::error;
 
 use crate::alert_reporter::MultiReporter;
 use crate::alert_reporter::reporter::{AlertTargetConfiguration, Reporter};
@@ -37,25 +37,21 @@ mod scheduled_watcher;
 fn main() -> Result<(), anyhow::Error> {
     tracing_subscriber::fmt::init();
 
-    let watchers: HashSet<WatcherConfiguration> = {
+    let watchers = {
         let watchers_file = "watchers.json";
         let file = File::open(watchers_file).with_context(|| format!("Could not open file: {}", watchers_file))?;
         let buf_reader = BufReader::new(file);
         let configurations: WatcherConfigurations = serde_json::from_reader(buf_reader)?;
-        configurations.0.into_iter().collect()
+        configurations.0.into_iter().collect::<HashSet<_>>().into_iter().map(Into::<WatcherEnum>::into).collect::<Vec<_>>()
     };
-    info!(?watchers);
 
-    let watchers: Vec<_> = watchers.into_iter().map(Into::<WatcherEnum>::into).collect();
-
-    let targets: Vec<Reporter> = {
-        let targets_file = "targets.json";
-        let file = File::open(targets_file).with_context(|| format!("Could not open file: {}", targets_file))?;
+    let reporters = {
+        let reporter_file = "reporters.json";
+        let file = File::open(reporter_file).with_context(|| format!("Could not open file: {}", reporter_file))?;
         let buf_reader = BufReader::new(file);
         let configurations: TargetConfigurations = serde_json::from_reader(buf_reader)?;
-        configurations.0.into_iter().map(Into::<Reporter>::into).collect()
+        MultiReporter(configurations.0.into_iter().map(Into::<Reporter>::into).collect())
     };
-    let targets = MultiReporter(targets);
 
     let mut timers = BinaryHeap::new();
 
@@ -66,7 +62,7 @@ fn main() -> Result<(), anyhow::Error> {
 
     while let Some(next) = timers.pop() {
         sleep_until(next.deadline);
-        if let Err(e) = next.watcher.run(&targets) {
+        if let Err(e) = next.watcher.run(&reporters) {
             error!(watcher = ?e);
         }
         timers.push(ScheduledWatcher { deadline: Instant::now() + next.watcher.period(), watcher: next.watcher });
