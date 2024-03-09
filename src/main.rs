@@ -1,5 +1,6 @@
 #![feature(thread_sleep_until)]
 
+use std::cmp::Reverse;
 use std::collections::{BinaryHeap, HashSet};
 use std::fs::File;
 use std::io::BufReader;
@@ -64,21 +65,21 @@ fn main() -> Result<(), anyhow::Error> {
 
     let now = Instant::now();
     for w in watchers {
-        timers.push(ScheduledWatcher {
+        timers.push(Reverse(ScheduledWatcher {
             deadline: now,
             watcher: w,
-        });
+        }));
     }
 
-    while let Some(next) = timers.pop() {
+    while let Some(Reverse(next)) = timers.pop() {
         sleep_until(next.deadline);
         if let Err(e) = next.watcher.run(&reporters) {
             error!(watcher = ?e);
         }
-        timers.push(ScheduledWatcher {
+        timers.push(Reverse(ScheduledWatcher {
             deadline: Instant::now() + next.watcher.period(),
             watcher: next.watcher,
-        });
+        }));
     }
 
     Ok(())
