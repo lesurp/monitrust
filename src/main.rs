@@ -11,53 +11,63 @@ use serde::Deserialize;
 use serde::Serialize;
 use tracing::error;
 
-use crate::alert_reporter::MultiReporter;
-use crate::alert_reporter::reporter::{AlertTargetConfiguration, Reporter};
+use crate::alert_reporter::{AlertTargetConfiguration, MultiReporter, Reporter};
 use crate::scheduled_watcher::ScheduledWatcher;
 use crate::watcher::{Watcher, WatcherConfiguration, WatcherEnum};
 
 #[serde_with::serde_as]
 #[derive(Deserialize)]
-struct WatcherConfigurations(
-    #[serde_as(as = "serde_with::EnumMap")]
-    Vec<WatcherConfiguration>,
-);
+struct WatcherConfigurations(#[serde_as(as = "serde_with::EnumMap")] Vec<WatcherConfiguration>);
 
 #[serde_with::serde_as]
 #[derive(Serialize, Deserialize)]
-struct TargetConfigurations(
-    #[serde_as(as = "serde_with::EnumMap")]
-    Vec<AlertTargetConfiguration>,
-);
+struct TargetConfigurations(#[serde_as(as = "serde_with::EnumMap")] Vec<AlertTargetConfiguration>);
 
-mod watcher;
 mod alert_reporter;
 mod scheduled_watcher;
+mod watcher;
 
 fn main() -> Result<(), anyhow::Error> {
     tracing_subscriber::fmt::init();
 
     let watchers = {
         let watchers_file = "watchers.json";
-        let file = File::open(watchers_file).with_context(|| format!("Could not open file: {}", watchers_file))?;
+        let file = File::open(watchers_file)
+            .with_context(|| format!("Could not open file: {}", watchers_file))?;
         let buf_reader = BufReader::new(file);
         let configurations: WatcherConfigurations = serde_json::from_reader(buf_reader)?;
-        configurations.0.into_iter().collect::<HashSet<_>>().into_iter().map(Into::<WatcherEnum>::into).collect::<Vec<_>>()
+        configurations
+            .0
+            .into_iter()
+            .collect::<HashSet<_>>()
+            .into_iter()
+            .map(Into::<WatcherEnum>::into)
+            .collect::<Vec<_>>()
     };
 
     let reporters = {
         let reporter_file = "reporters.json";
-        let file = File::open(reporter_file).with_context(|| format!("Could not open file: {}", reporter_file))?;
+        let file = File::open(reporter_file)
+            .with_context(|| format!("Could not open file: {}", reporter_file))?;
         let buf_reader = BufReader::new(file);
         let configurations: TargetConfigurations = serde_json::from_reader(buf_reader)?;
-        MultiReporter(configurations.0.into_iter().map(Into::<Reporter>::into).collect())
+        MultiReporter(
+            configurations
+                .0
+                .into_iter()
+                .map(Into::<Reporter>::into)
+                .collect(),
+        )
     };
 
     let mut timers = BinaryHeap::new();
 
     let now = Instant::now();
     for w in watchers {
-        timers.push(ScheduledWatcher { deadline: now, watcher: w });
+        timers.push(ScheduledWatcher {
+            deadline: now,
+            watcher: w,
+        });
     }
 
     while let Some(next) = timers.pop() {
@@ -65,7 +75,10 @@ fn main() -> Result<(), anyhow::Error> {
         if let Err(e) = next.watcher.run(&reporters) {
             error!(watcher = ?e);
         }
-        timers.push(ScheduledWatcher { deadline: Instant::now() + next.watcher.period(), watcher: next.watcher });
+        timers.push(ScheduledWatcher {
+            deadline: Instant::now() + next.watcher.period(),
+            watcher: next.watcher,
+        });
     }
 
     Ok(())

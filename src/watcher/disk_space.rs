@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use nix::sys::statvfs::statvfs;
 use serde::{Deserialize, Serialize};
 use tracing::info;
@@ -25,7 +25,7 @@ impl watcher::Checker for Checker {
 
     fn check(&self) -> Result<Self::CheckResult> {
         info!(checking = "disk_space");
-        let stats = statvfs("/").unwrap();
+        let stats = statvfs("/").context("Could not execute 'statvfs'")?;
         let free_space = stats.blocks_available() as f64 / stats.blocks() as f64;
         info!(free_space);
         Ok(free_space)
@@ -37,7 +37,7 @@ impl watcher::Checker for Checker {
 
     fn new(configuration: Self::Configuration) -> Self {
         Checker {
-            period: Duration::from_secs(60 * configuration.period_minutes)
+            period: Duration::from_secs(60 * configuration.period_minutes),
         }
     }
 }
@@ -51,10 +51,17 @@ pub struct Alert {
 impl watcher::Alert for Alert {
     type Checker = Checker;
 
-    fn is_triggered(&self, check_result: &<Self::Checker as watcher::Checker>::CheckResult) -> Option<ActiveAlert> {
+    fn is_triggered(
+        &self,
+        check_result: &<Self::Checker as watcher::Checker>::CheckResult,
+    ) -> Option<ActiveAlert> {
         if self.min < *check_result && *check_result < self.max {
             Some(ActiveAlert {
-                message: format!("Disk usage is {} (threshold at {}%)", 100.0 * *check_result, 100.0 * self.max)
+                message: format!(
+                    "Disk usage is {:.2} (threshold at {:.2}%)",
+                    100.0 * *check_result,
+                    100.0 * self.max
+                ),
             })
         } else {
             None

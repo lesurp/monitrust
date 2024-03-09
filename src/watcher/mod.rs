@@ -3,6 +3,7 @@ use std::hash::{Hash, Hasher};
 use std::time::Duration;
 
 use anyhow::Result;
+use enum_dispatch::enum_dispatch;
 use serde::de::DeserializeOwned;
 use serde::Deserialize;
 use tracing::{info, warn};
@@ -10,6 +11,7 @@ use tracing::{info, warn};
 use crate::alert_reporter::AlertReporter;
 
 pub mod disk_space;
+pub mod heartbeat;
 pub mod memory;
 
 #[derive(Debug, Clone)]
@@ -28,11 +30,16 @@ pub trait Checker {
 
 pub trait Alert {
     type Checker: Checker;
-    fn is_triggered(&self, check_result: &<Self::Checker as Checker>::CheckResult) -> Option<ActiveAlert>;
+    fn is_triggered(
+        &self,
+        check_result: &<Self::Checker as Checker>::CheckResult,
+    ) -> Option<ActiveAlert>;
 }
 
+#[enum_dispatch(WatcherEnum)]
 pub trait Watcher {
     fn run<A: AlertReporter>(&self, alert_reporter: &A) -> Result<()>;
+    fn period(&self) -> Duration;
 }
 
 pub struct MultiWatcher<A: Alert> {
@@ -42,11 +49,10 @@ pub struct MultiWatcher<A: Alert> {
 
 impl<A: Alert + DeserializeOwned + Clone + Debug> MultiWatcher<A> {
     pub fn new(serialized_configuration: SerializedMultiWatcher<A>) -> Self {
-        MultiWatcher { checker: A::Checker::new(serialized_configuration.configuration), alerts: serialized_configuration.alerts }
-    }
-
-    pub fn period(&self) -> Duration {
-        self.checker.period()
+        MultiWatcher {
+            checker: A::Checker::new(serialized_configuration.configuration),
+            alerts: serialized_configuration.alerts,
+        }
     }
 }
 
@@ -60,10 +66,15 @@ impl<A: Alert> Watcher for MultiWatcher<A> {
             .filter_map(|alert| match alert_reporter.report(&alert) {
                 Ok(_) => None,
                 Err(e) => Some(e),
-            }).for_each(|e| {
-            warn!(alert_reporter = ?e);
-        });
+            })
+            .for_each(|e| {
+                warn!(alert_reporter = ?e);
+            });
         Ok(())
+    }
+
+    fn period(&self) -> Duration {
+        self.checker.period()
     }
 }
 
@@ -73,27 +84,11 @@ pub struct SerializedMultiWatcher<A: Clone + Debug + Alert> {
     alerts: Vec<A>,
 }
 
+#[enum_dispatch]
 pub enum WatcherEnum {
     DiskSpace(MultiWatcher<disk_space::Alert>),
     Memory(MultiWatcher<memory::Alert>),
-}
-
-impl WatcherEnum {
-    pub fn period(&self) -> Duration {
-        match self {
-            WatcherEnum::DiskSpace(d) => d.period(),
-            WatcherEnum::Memory(m) => m.period(),
-        }
-    }
-}
-
-impl Watcher for WatcherEnum {
-    fn run<A: AlertReporter>(&self, alert_reporter: &A) -> Result<()> {
-        match self {
-            WatcherEnum::DiskSpace(d) => d.run(alert_reporter),
-            WatcherEnum::Memory(m) => m.run(alert_reporter),
-        }
-    }
+    Heartbeat(MultiWatcher<heartbeat::Alert>),
 }
 
 #[derive(Deserialize, Debug)]
@@ -106,7 +101,7 @@ impl Into<WatcherEnum> for WatcherConfiguration {
     fn into(self) -> WatcherEnum {
         match self {
             WatcherConfiguration::DiskSpace(d) => WatcherEnum::DiskSpace(MultiWatcher::new(d)),
-            WatcherConfiguration::Memory(m) => WatcherEnum::Memory(MultiWatcher::new(m))
+            WatcherConfiguration::Memory(m) => WatcherEnum::Memory(MultiWatcher::new(m)),
         }
     }
 }
