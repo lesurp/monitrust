@@ -3,6 +3,7 @@ use std::time::Instant;
 
 use crate::watcher::WatcherEnum;
 
+#[derive(Debug)]
 pub struct ScheduledWatcher {
     pub deadline: Instant,
     pub watcher: WatcherEnum,

@@ -28,8 +28,8 @@ pub trait Checker {
     fn new(configuration: Self::Configuration) -> Self;
 }
 
-pub trait Alert {
-    type Checker: Checker;
+pub trait Alert: Debug {
+    type Checker: Checker + Debug;
     fn is_triggered(
         &self,
         check_result: &<Self::Checker as Checker>::CheckResult,
@@ -42,12 +42,13 @@ pub trait Watcher {
     fn period(&self) -> Duration;
 }
 
-pub struct MultiWatcher<A: Alert> {
+#[derive(Debug)]
+pub struct MultiWatcher<A: Alert + Debug> {
     checker: A::Checker,
     alerts: Vec<A>,
 }
 
-impl<A: Alert + DeserializeOwned + Clone + Debug> MultiWatcher<A> {
+impl<A: Alert + DeserializeOwned + Clone> MultiWatcher<A> {
     pub fn new(serialized_configuration: SerializedMultiWatcher<A>) -> Self {
         MultiWatcher {
             checker: A::Checker::new(serialized_configuration.configuration),
@@ -85,6 +86,7 @@ pub struct SerializedMultiWatcher<A: Clone + Debug + Alert> {
 }
 
 #[enum_dispatch]
+#[derive(Debug)]
 pub enum WatcherEnum {
     DiskSpace(MultiWatcher<disk_space::Alert>),
     Memory(MultiWatcher<memory::Alert>),
