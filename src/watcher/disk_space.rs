@@ -58,7 +58,7 @@ impl watcher::Alert for Alert {
         if self.min < *check_result && *check_result < self.max {
             Some(ActiveAlert {
                 message: format!(
-                    "Disk usage is {:.2}% (threshold: {:.2}%).",
+                    "💾 Free disk space is {:.2}% (threshold: {:.2}%).",
                     100.0 * *check_result,
                     100.0 * self.max
                 ),
