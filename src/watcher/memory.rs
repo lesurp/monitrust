@@ -58,7 +58,7 @@ impl watcher::Alert for Alert {
         if self.min < *check_result && *check_result < self.max {
             Some(ActiveAlert {
                 message: format!(
-                    "Memory is {} (threshold at {}%)",
+                    "Memory usage is at {:.2}% (threshold: {:.2}%).",
                     100.0 * *check_result,
                     100.0 * self.max
                 ),

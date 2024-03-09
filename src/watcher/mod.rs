@@ -95,6 +95,7 @@ pub enum WatcherEnum {
 pub enum WatcherConfiguration {
     DiskSpace(SerializedMultiWatcher<disk_space::Alert>),
     Memory(SerializedMultiWatcher<memory::Alert>),
+    Heartbeat(SerializedMultiWatcher<heartbeat::Alert>),
 }
 
 impl Into<WatcherEnum> for WatcherConfiguration {
@@ -102,6 +103,7 @@ impl Into<WatcherEnum> for WatcherConfiguration {
         match self {
             WatcherConfiguration::DiskSpace(d) => WatcherEnum::DiskSpace(MultiWatcher::new(d)),
             WatcherConfiguration::Memory(m) => WatcherEnum::Memory(MultiWatcher::new(m)),
+            WatcherConfiguration::Heartbeat(h) => WatcherEnum::Heartbeat(MultiWatcher::new(h)),
         }
     }
 }
