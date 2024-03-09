@@ -34,8 +34,7 @@ codegen-units = 1
 [package.metadata.deb]
 maintainer = "Paul Lesur <me@lesurpaul.fr>"
 license-file = "LICENSE"
-extended-description = """\
-A dumb watchdog + alert manager for self-hosted systems."""
+extended-description = "A dumb watchdog + alert manager for self-hosted systems."
 depends = "systemd"
 section = "utility"
 priority = "optional"

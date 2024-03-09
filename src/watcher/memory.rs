@@ -26,7 +26,7 @@ impl watcher::Checker for Checker {
     fn check(&self) -> Result<Self::CheckResult> {
         info!(checking = "memory");
         let sysinfo = sysinfo().context("Could not execute 'sysinfo'")?;
-        let free_memory = f64::from(sysinfo.ram_unused()) / f64::from(sysinfo.ram_total());
+        let free_memory = (sysinfo.ram_unused() as f64) / (sysinfo.ram_total() as f64);
         info!(free_memory);
         Ok(free_memory)
     }
