@@ -10,7 +10,7 @@ license-file = "LICENSE"
 
 [dependencies]
 anyhow = "1.0.79"
-nix = { version = "0.27.1", default_features = false, features = ["fs"] }
+nix = { version = "0.27.1", default_features = false, features = ["fs"], optional = true }
 serde = { version = "1.0.195", features = ["derive"] }
 serde_json = "1.0.111"
 serde_with = "3.6.1"
@@ -22,8 +22,9 @@ tracing-subscriber = "0.3.18"
 enum_dispatch = "0.3.12"
 
 [features]
-default = ["telegram"]
+default = ["telegram", "nix"]
 telegram = ["dep:teloxide", "tokio/rt-multi-thread"]
+nix = ["dep:nix"]
 
 [profile.release]
 opt-level = 'z'  # Optimize for size.

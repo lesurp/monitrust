@@ -10,6 +10,7 @@ use tracing::{info, warn};
 
 use crate::alert_reporter::AlertReporter;
 
+#[cfg(feature = "nix")]
 pub mod disk_space;
 pub mod heartbeat;
 pub mod memory;
@@ -88,6 +89,7 @@ pub struct SerializedMultiWatcher<A: Clone + Debug + Alert> {
 #[enum_dispatch]
 #[derive(Debug)]
 pub enum WatcherEnum {
+    #[cfg(feature = "nix")]
     DiskSpace(MultiWatcher<disk_space::Alert>),
     Memory(MultiWatcher<memory::Alert>),
     Heartbeat(MultiWatcher<heartbeat::Alert>),
@@ -95,6 +97,7 @@ pub enum WatcherEnum {
 
 #[derive(Deserialize, Debug)]
 pub enum WatcherConfiguration {
+    #[cfg(feature = "nix")]
     DiskSpace(SerializedMultiWatcher<disk_space::Alert>),
     Memory(SerializedMultiWatcher<memory::Alert>),
     Heartbeat(SerializedMultiWatcher<heartbeat::Alert>),
@@ -103,6 +106,7 @@ pub enum WatcherConfiguration {
 impl Into<WatcherEnum> for WatcherConfiguration {
     fn into(self) -> WatcherEnum {
         match self {
+            #[cfg(feature = "nix")]
             WatcherConfiguration::DiskSpace(d) => WatcherEnum::DiskSpace(MultiWatcher::new(d)),
             WatcherConfiguration::Memory(m) => WatcherEnum::Memory(MultiWatcher::new(m)),
             WatcherConfiguration::Heartbeat(h) => WatcherEnum::Heartbeat(MultiWatcher::new(h)),
