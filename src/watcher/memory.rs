@@ -1,6 +1,7 @@
 use std::time::Duration;
 
-use anyhow::Result;
+use anyhow::{Context, Result};
+use nix::sys::sysinfo::sysinfo;
 use serde::{Deserialize, Serialize};
 use tracing::info;
 
@@ -24,7 +25,10 @@ impl watcher::Checker for Checker {
 
     fn check(&self) -> Result<Self::CheckResult> {
         info!(checking = "memory");
-        Ok(0.5)
+        let sysinfo = sysinfo().context("Could not execute 'sysinfo'")?;
+        let free_memory = f64::from(sysinfo.ram_unused()) / f64::from(sysinfo.ram_total());
+        info!(free_memory);
+        Ok(free_memory)
     }
 
     fn period(&self) -> Duration {
@@ -64,4 +68,3 @@ impl watcher::Alert for Alert {
         }
     }
 }
-
