@@ -1,0 +1,6 @@
+{
+  "Telegram": {
+    "api": <YOUR API KEY>,
+    "chat_id": <YOUR CHAT ID>
+  }
+}
