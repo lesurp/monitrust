@@ -21,6 +21,6 @@
     "configuration": {
       "period_hours": 24
     },
-    "alerts": []
+    "alerts": [{}]
   }
 }
