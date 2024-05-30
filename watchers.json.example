@@ -3,25 +3,24 @@
     "configuration": {
       "period_minutes": 5
     },
-    "alerts": {
+    "alerts": [{
       "min": 0.0,
-      "max": 0.05,
-    }
+      "max": 0.05
+    }]
   },
   "Memory": {
     "configuration": {
       "period_minutes": 5
     },
-    "alerts": {
+    "alerts": [{
       "min": 0.0,
-      "max": 0.05,
-    }
+      "max": 0.05
+    }]
   },
   "Heartbeat": {
     "configuration": {
       "period_hours": 24
     },
-    "alerts": {
-    }
+    "alerts": []
   }
 }
