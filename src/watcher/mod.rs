@@ -103,9 +103,9 @@ pub enum WatcherConfiguration {
     Heartbeat(SerializedMultiWatcher<heartbeat::Alert>),
 }
 
-impl Into<WatcherEnum> for WatcherConfiguration {
-    fn into(self) -> WatcherEnum {
-        match self {
+impl From<WatcherConfiguration> for WatcherEnum {
+    fn from(value: WatcherConfiguration) -> Self {
+        match value {
             #[cfg(feature = "nix")]
             WatcherConfiguration::DiskSpace(d) => WatcherEnum::DiskSpace(MultiWatcher::new(d)),
             WatcherConfiguration::Memory(m) => WatcherEnum::Memory(MultiWatcher::new(m)),

@@ -18,7 +18,7 @@ impl AlertReporter for MultiReporter {
     fn report(&self, alert: &ActiveAlert) -> Result<()> {
         self.0
             .iter()
-            .map(|a| a.report(&alert))
+            .map(|a| a.report(alert))
             .filter_map(|r| match r {
                 Ok(_) => None,
                 Err(e) => Some(e),
@@ -42,11 +42,10 @@ pub enum AlertTargetConfiguration {
     Telegram(telegram::Configuration),
 }
 
-impl Into<Reporter> for AlertTargetConfiguration {
-    fn into(self) -> Reporter {
-        match self {
+impl From<AlertTargetConfiguration> for Reporter {
+    fn from(value: AlertTargetConfiguration) -> Self {
+        match value {
             AlertTargetConfiguration::Telegram(t) => Reporter::Telegram(Telegram::new(t)),
         }
     }
 }
-

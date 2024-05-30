@@ -46,7 +46,7 @@ impl watcher::Alert for Alert {
         _: &<Self::Checker as watcher::Checker>::CheckResult,
     ) -> Option<ActiveAlert> {
         Some(ActiveAlert {
-            message: format!("MonitRust is still running 💓",),
+            message: "MonitRust is still running 💓".to_string(),
         })
     }
 }
