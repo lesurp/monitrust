@@ -16,7 +16,7 @@ serde_json = "1.0.111"
 serde_with = "3.6.1"
 teloxide = { version = "0.12.2", optional = true }
 thiserror = "1.0.57"
-tokio = { version = "1.35.1", default-features = false, optional = true }
+tokio = { version = "1.38", default-features = false, optional = true }
 tracing = "0.1.40"
 tracing-subscriber = "0.3.18"
 enum_dispatch = "0.3.12"
