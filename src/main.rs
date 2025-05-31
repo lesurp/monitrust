@@ -34,7 +34,7 @@ fn main() -> Result<(), anyhow::Error> {
     let watchers = {
         let watchers_file = "watchers.json";
         let file = File::open(watchers_file)
-            .with_context(|| format!("Could not open file: {}", watchers_file))?;
+            .with_context(|| format!("Could not open file: {watchers_file}"))?;
         let buf_reader = BufReader::new(file);
         let configurations: WatcherConfigurations = serde_json::from_reader(buf_reader)?;
         configurations
@@ -42,22 +42,22 @@ fn main() -> Result<(), anyhow::Error> {
             .into_iter()
             .collect::<HashSet<_>>()
             .into_iter()
-            .map(Into::<WatcherEnum>::into)
+            .map(WatcherEnum::from)
             .collect::<Vec<_>>()
     };
 
     let reporters = {
         let reporter_file = "reporters.json";
         let file = File::open(reporter_file)
-            .with_context(|| format!("Could not open file: {}", reporter_file))?;
+            .with_context(|| format!("Could not open file: {reporter_file}"))?;
         let buf_reader = BufReader::new(file);
         let configurations: TargetConfigurations = serde_json::from_reader(buf_reader)?;
         MultiReporter(
             configurations
                 .0
                 .into_iter()
-                .map(Into::<Reporter>::into)
-                .collect(),
+                .map(Reporter::try_from)
+                .collect::<Result<_, _>>()?,
         )
     };
 

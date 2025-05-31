@@ -1,6 +1,8 @@
 use crate::watcher::ActiveAlert;
 use anyhow::Result;
 use enum_dispatch::enum_dispatch;
+#[cfg(feature = "mail")]
+use reporters::mail::{self, Mail};
 #[cfg(feature = "telegram")]
 use reporters::telegram::{self, Telegram};
 use serde::{Deserialize, Serialize};
@@ -19,10 +21,7 @@ impl AlertReporter for MultiReporter {
         self.0
             .iter()
             .map(|a| a.report(alert))
-            .filter_map(|r| match r {
-                Ok(_) => None,
-                Err(e) => Some(e),
-            })
+            .filter_map(|r| r.err())
             .for_each(|e| {
                 warn!(reporter_error = ?e);
             });
@@ -34,18 +33,27 @@ impl AlertReporter for MultiReporter {
 pub enum Reporter {
     #[cfg(feature = "telegram")]
     Telegram,
+
+    #[cfg(feature = "mail")]
+    Mail,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum AlertTargetConfiguration {
     #[cfg(feature = "telegram")]
     Telegram(telegram::Configuration),
+
+    #[cfg(feature = "mail")]
+    Mail(mail::Configuration),
 }
 
-impl From<AlertTargetConfiguration> for Reporter {
-    fn from(value: AlertTargetConfiguration) -> Self {
-        match value {
+impl TryFrom<AlertTargetConfiguration> for Reporter {
+    type Error = anyhow::Error;
+
+    fn try_from(value: AlertTargetConfiguration) -> Result<Self> {
+        Ok(match value {
             AlertTargetConfiguration::Telegram(t) => Reporter::Telegram(Telegram::new(t)),
-        }
+            AlertTargetConfiguration::Mail(t) => Reporter::Mail(Mail::try_new(t)?),
+        })
     }
 }
